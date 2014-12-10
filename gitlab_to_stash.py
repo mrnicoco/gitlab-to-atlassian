@@ -136,7 +136,7 @@ def main(argv=None):
     skipped_count = 0
     print('Processing GitLab projects...', file=sys.stderr)
     sys.stderr.flush()
-    for project in gen_all_results(git.getallprojects,
+    for project in gen_all_results(git.getprojectsall,
                                    per_page=args.page_size):
         print('\n' + ('=' * 80) + '\n', file=sys.stderr)
         sys.stderr.flush()
