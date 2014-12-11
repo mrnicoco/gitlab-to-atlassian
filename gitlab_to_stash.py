@@ -126,6 +126,8 @@ def main(argv=None):
     key_set = {proj['key'] for proj in stash.projects}
     stash_project_names = {proj['name'] for proj in stash.projects}
     names_to_keys = {proj['name']: proj['key'] for proj in stash.projects}
+    stash_project_names << {'~' + user['slug'] for user in stash.admin.users.list()}
+    stash_users = {user['slug'] for user in stash.admin.users.list()}
     print('done', file=sys.stderr)
     sys.stderr.flush()
     updated_projects = set()
@@ -134,6 +136,8 @@ def main(argv=None):
     cwd = os.getcwd()
     transfer_count = 0
     skipped_count = 0
+    for project in stash_project_names:
+        print ('detected projetct : %s' % project, file=sys.stderr)
     print('Processing GitLab projects...', file=sys.stderr)
     sys.stderr.flush()
     for project in gen_all_results(git.getprojectsall,
@@ -141,12 +145,13 @@ def main(argv=None):
         print('\n' + ('=' * 80) + '\n', file=sys.stderr)
         sys.stderr.flush()
         proj_name = project['namespace']['name']
+        if proj_name in stash_users:
+            proj_name = "~" + proj_name
         # Create Stash project if it doesn't already exist
         if proj_name not in stash_project_names:
             # Create Stash project key
             key = proj_name
-            if key.islower():
-                key = key.title()
+            if key.islower():                key = key.title()
             key = re.sub(r'[^A-Z]', '', key)
             if len(key) < 2:
                 key = re.sub(r'[^A-Za-z]', '', proj_name)[0:2].upper()
@@ -164,13 +169,16 @@ def main(argv=None):
             print('Creating Stash project "%s" with key %s...' %
                   (proj_name, key), end="", file=sys.stderr)
             sys.stderr.flush()
-            stash.projects.create(key, proj_name)
+#####       stash.projects.create(key, proj_name)
             names_to_keys[proj_name] = key
             stash_project_names.add(proj_name)
             print('done', file=sys.stderr)
             sys.stderr.flush()
         else:
-            key = names_to_keys[proj_name]
+            if proj_name[0:1] != "~":
+                key = names_to_keys[proj_name]
+            else:
+                key = proj_name
 
         stash_project = stash.projects[key]
 
@@ -221,35 +229,35 @@ def main(argv=None):
             # Clone repository to temporary directory
             print('\nCloning GitLab repository...', file=sys.stderr)
             sys.stderr.flush()
-            try:
-                subprocess.check_call(['git', 'clone', '--mirror',
-                                       project['ssh_url_to_repo'],
-                                       temp_dir])
-            except subprocess.CalledProcessError:
-                print('Failed to clone GitLab repository. This usually when ' +
-                      'it does not exist.', file=sys.stderr)
-                failed_to_clone.add(project['name_with_namespace'])
-                skipped_count += 1
-                continue
-            os.chdir(temp_dir)
-
-            # Check that repository is not empty
-            try:
-                subprocess.check_call(['git', 'log', '--format=oneline', '-1'],
-                                      stdout=subprocess.DEVNULL,
-                                      stderr=subprocess.DEVNULL)
-            except subprocess.CalledProcessError:
-                print('Repository is empty, so skipping push to Stash.',
-                      file=sys.stderr)
-                skipped_count += 1
-            else:
-                # Change remote to Stash and push
-                print('\nPushing repository to Stash...', file=sys.stderr)
-                sys.stderr.flush()
-                subprocess.check_call(['git', 'remote', 'set-url', 'origin',
-                                       stash_repo_url])
-                subprocess.check_call(['git', 'push', '--mirror'])
-                transfer_count += 1
+#            try:
+#                subprocess.check_call(['git', 'clone', '--mirror',
+#                                       project['ssh_url_to_repo'],
+#                                       temp_dir])
+#            except subprocess.CalledProcessError:
+#                print('Failed to clone GitLab repository. This usually when ' +
+#                      'it does not exist.', file=sys.stderr)
+#                failed_to_clone.add(project['name_with_namespace'])
+#                skipped_count += 1
+#                continue
+#            os.chdir(temp_dir)
+#
+#            # Check that repository is not empty
+#            try:
+#                subprocess.check_call(['git', 'log', '--format=oneline', '-1'],
+#                                      stdout=subprocess.DEVNULL,
+#                                      stderr=subprocess.DEVNULL)
+#            except subprocess.CalledProcessError:
+#                print('Repository is empty, so skipping push to Stash.',
+#                      file=sys.stderr)
+#                skipped_count += 1
+#            else:
+#                # Change remote to Stash and push
+#                print('\nPushing repository to Stash...', file=sys.stderr)
+#                sys.stderr.flush()
+#                subprocess.check_call(['git', 'remote', 'set-url', 'origin',
+#                                       stash_repo_url])
+#                subprocess.check_call(['git', 'push', '--mirror'])
+#                transfer_count += 1
 
             os.chdir(cwd)
 
