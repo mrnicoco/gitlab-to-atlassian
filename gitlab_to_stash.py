@@ -16,6 +16,9 @@ import re
 import subprocess
 import sys
 import tempfile
+import urllib.request
+import base64
+import time
 
 import stashy
 from gitlab import Gitlab as GitLab
@@ -126,7 +129,21 @@ def main(argv=None):
     key_set = {proj['key'] for proj in stash.projects}
     stash_project_names = {proj['name'] for proj in stash.projects}
     names_to_keys = {proj['name']: proj['key'] for proj in stash.projects}
-    stash_project_names << {'~' + user['slug'] for user in stash.admin.users.list()}
+    stash_project_names = stash_project_names.union({'~' + user['slug'] for user in stash.admin.users.list()})
+    # Initialize users private repositories
+    for user in stash.admin.users.list():
+        request = urllib.request.Request(args.stash_url+ "users/" + user['slug'] + "/repos?start=0&limit=50")
+        print(request.get_full_url())
+        base64string = base64.b64encode((args.username + ":" + args.password).encode('ascii'))
+        request.add_header("Authorization", "Basic %s" % base64string)
+        request.add_header("Referer", args.stash_url + "users/" + user['slug'])
+        request.add_header("Accept", "application/json, text/javascript, */*; q=0.01")
+        try:
+            result =  urllib.request.urlopen(request)
+            print("Personnal repository for : " + user['slug'] + " may be not initialized \n")
+        except urllib.error.HTTPError:
+            print("repository initialized")
+    
     stash_users = {user['slug'] for user in stash.admin.users.list()}
     print('done', file=sys.stderr)
     sys.stderr.flush()
