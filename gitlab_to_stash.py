@@ -119,7 +119,7 @@ def main(argv=None):
         args.username = input('').strip()
     if not args.password:
         args.password = getpass.getpass('Password: ')
-    stash = stashy.connect(args.stash_url, args.username, args.password)
+    stash = stashy.connect(args.stash_url, args.username, args.password, False)
     if git is None:
         git = GitLab(args.gitlab_url, verify_ssl=args.verify_ssl)
         git.login(args.username, args.password)
@@ -139,7 +139,7 @@ def main(argv=None):
         request.add_header("Referer", args.stash_url + "users/" + user['slug'])
         request.add_header("Accept", "application/json, text/javascript, */*; q=0.01")
         try:
-            result =  urllib.request.urlopen(request)
+#            result =  urllib.request.urlopen(request)
             print("Personnal repository for : " + user['slug'] + " may be not initialized \n")
         except urllib.error.HTTPError:
             print("repository initialized")
@@ -186,7 +186,7 @@ def main(argv=None):
             print('Creating Stash project "%s" with key %s...' %
                   (proj_name, key), end="", file=sys.stderr)
             sys.stderr.flush()
-#####       stash.projects.create(key, proj_name)
+            stash.projects.create(key, proj_name)
             names_to_keys[proj_name] = key
             stash_project_names.add(proj_name)
             print('done', file=sys.stderr)
