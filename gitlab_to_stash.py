@@ -246,35 +246,35 @@ def main(argv=None):
             # Clone repository to temporary directory
             print('\nCloning GitLab repository...', file=sys.stderr)
             sys.stderr.flush()
-#            try:
-#                subprocess.check_call(['git', 'clone', '--mirror',
-#                                       project['ssh_url_to_repo'],
-#                                       temp_dir])
-#            except subprocess.CalledProcessError:
-#                print('Failed to clone GitLab repository. This usually when ' +
-#                      'it does not exist.', file=sys.stderr)
-#                failed_to_clone.add(project['name_with_namespace'])
-#                skipped_count += 1
-#                continue
-#            os.chdir(temp_dir)
-#
-#            # Check that repository is not empty
-#            try:
-#                subprocess.check_call(['git', 'log', '--format=oneline', '-1'],
-#                                      stdout=subprocess.DEVNULL,
-#                                      stderr=subprocess.DEVNULL)
-#            except subprocess.CalledProcessError:
-#                print('Repository is empty, so skipping push to Stash.',
-#                      file=sys.stderr)
-#                skipped_count += 1
-#            else:
-#                # Change remote to Stash and push
-#                print('\nPushing repository to Stash...', file=sys.stderr)
-#                sys.stderr.flush()
-#                subprocess.check_call(['git', 'remote', 'set-url', 'origin',
-#                                       stash_repo_url])
-#                subprocess.check_call(['git', 'push', '--mirror'])
-#                transfer_count += 1
+            try:
+                subprocess.check_call(['git', 'clone', '--mirror',
+                                       project['ssh_url_to_repo'],
+                                       temp_dir])
+            except subprocess.CalledProcessError:
+                print('Failed to clone GitLab repository. This usually when ' +
+                      'it does not exist.', file=sys.stderr)
+                failed_to_clone.add(project['name_with_namespace'])
+                skipped_count += 1
+                continue
+            os.chdir(temp_dir)
+
+            # Check that repository is not empty
+            try:
+                subprocess.check_call(['git', 'log', '--format=oneline', '-1'],
+                                      stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL)
+            except subprocess.CalledProcessError:
+                print('Repository is empty, so skipping push to Stash.',
+                      file=sys.stderr)
+                skipped_count += 1
+            else:
+                # Change remote to Stash and push
+                print('\nPushing repository to Stash...', file=sys.stderr)
+                sys.stderr.flush()
+                subprocess.check_call(['git', 'remote', 'set-url', 'origin',
+                                       stash_repo_url])
+                subprocess.check_call(['git', 'push', '--mirror'])
+                transfer_count += 1
 
             os.chdir(cwd)
 
